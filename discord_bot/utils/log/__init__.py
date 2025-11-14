@@ -1,1 +1,1 @@
-from .log import get_formatted_log
+from .log import print_formatted_log
