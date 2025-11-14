@@ -1,13 +1,11 @@
 import discord
-from configs.env import (
-    BOT_TOKEN,
-    BOT_COMMAND_PREFIX
-)
+from configs.env import BOT_TOKEN, BOT_COMMAND_PREFIX
+
 
 class BotConfig:
     @staticmethod
     def get_bot_token():
-        return (BOT_TOKEN)
+        return BOT_TOKEN
 
     @staticmethod
     def get_command_prefix():
