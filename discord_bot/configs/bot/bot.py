@@ -15,4 +15,4 @@ class BotConfig:
 
     @staticmethod
     def get_command_count(bot: discord.Intents):
-        return len(list(bot.tree.walk_commands()))
+        return len(bot.tree.fetch_command(guild=guild))

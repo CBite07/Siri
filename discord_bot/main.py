@@ -1,27 +1,19 @@
 import discord
 from discord.ext import commands
 import os
-import sys
 
 from configs.path import PathConfig
 from discord_bot.configs.bot import BotConfig
-from discord_bot.utils.time import get_formatted_time
 from discord_bot.utils.log import get_formatted_log
 
-if str(PathConfig.ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(PathConfig.ROOT_DIR))
-
 intents = discord.Intents.default()
+intents.message_content = True
 bot = commands.Bot(command_prefix=BotConfig.get_command_prefix, intents=intents)
-
 
 @bot.event
 async def on_ready():
     print(get_formatted_log("START", __name__, "Bot logged in successfully."))
-
-    for guild in bot.guilds:
-        await bot.tree.sync(guild=guild)
-
+    await bot.tree.sync()
     print(
         get_formatted_log(
             "START",
@@ -30,16 +22,16 @@ async def on_ready():
         )
     )
 
-
-for filename in os.listdir(PathConfig.DISCORD_COG_DIR):
-    if filename.endswith(".py"):
-        bot.load_extension(f"cogs.{filename[:-3]}")  # .py 제거
-        print(
-            get_formatted_log(
-                "START", __name__, f"Bot loaded cogs.{filename} successfully"
+async def load_cogs():
+    for filename in os.listdir(PathConfig.DISCORD_COG_DIR):
+        if filename.endswith(".py") and filename != "__init__.py":
+            await bot.load_extension(f"discord_bot.cogs.{filename[:-3]}")
+            print(
+                get_formatted_log(
+                    "START", __name__, f"Bot loaded cogs.{filename} successfully"
+                )
             )
-        )
 
-
-def run_bot():
-    bot.run(BotConfig.get_bot_token())
+async def run_bot():
+    await load_cogs()
+    await bot.start(BotConfig.get_bot_token())
