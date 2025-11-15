@@ -11,6 +11,6 @@ class PathConfig:
     DISCORD_RUN_FILE = "discord_bot.run"
     COGS = ["discord_bot.cogs.test.test"]
 
-    CONFIG_DIR = ROOT_DIR / "condigs"
+    CONFIG_DIR = ROOT_DIR / "configs"
 
     LOG_DIR = ROOT_DIR / "logs"
