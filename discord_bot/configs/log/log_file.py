@@ -1,5 +1,6 @@
 from configs.path import PathConfig
 
+
 class LogFileConfig:
     FILE_NAME = "log-data.log"
     FILE_ADDRESS = PathConfig.LOG_DIR / FILE_NAME
