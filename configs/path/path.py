@@ -11,3 +11,5 @@ class PathConfig:
     COGS = ["discord_bot.cogs.test.test"]
 
     CONFIG_DIR = ROOT_DIR / "condigs"
+
+    LOG_DIR = ROOT_DIR / "logs"
