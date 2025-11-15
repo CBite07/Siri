@@ -13,10 +13,10 @@ bot = commands.Bot(command_prefix=BotConfig.get_command_prefix, intents=intents)
 
 @bot.event
 async def on_ready():
-    print_formatted_log("START", __name__, "Bot logged in successfully.")
+    print_formatted_log("start", __name__, "Bot logged in successfully.")
     await bot.tree.sync()
     print_formatted_log(
-        "START",
+        "start",
         __name__,
         f"Bot synchronized {BotConfig.get_command_count(bot)} commands successfully.",
     )
@@ -25,7 +25,7 @@ async def on_ready():
 async def load_cogs():
     for cog in PathConfig.COGS:
         await bot.load_extension(cog)
-        print_formatted_log("START", __name__, f"Bot loaded {cog} successfully")
+        print_formatted_log("start", __name__, f"Bot loaded {cog} successfully")
 
 
 async def run_bot():
