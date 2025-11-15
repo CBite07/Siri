@@ -16,18 +16,16 @@ async def on_ready():
     print_formatted_log("START", __name__, "Bot logged in successfully.")
     await bot.tree.sync()
     print_formatted_log(
-        "START", __name__,
+        "START",
+        __name__,
         f"Bot synchronized {BotConfig.get_command_count(bot)} commands successfully.",
     )
 
 
 async def load_cogs():
-    for filename in os.listdir(PathConfig.DISCORD_COG_DIR):
-        if filename.endswith(".py") and filename != "__init__.py":
-            await bot.load_extension(f"discord_bot.cogs.{filename[:-3]}")
-            print_formatted_log(
-                "START", __name__, f"Bot loaded cogs.{filename} successfully"
-            )
+    for cog in PathConfig.COGS:
+        await bot.load_extension(cog)
+        print_formatted_log("START", __name__, f"Bot loaded {cog} successfully")
 
 
 async def run_bot():
