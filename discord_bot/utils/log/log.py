@@ -17,7 +17,7 @@ def _format_status(status: str, length: int) -> str:
     return f"{status:<{length}}"
 
 
-def print_formatted_log(status: str, module: str, message: str):
+def print_log(status: str, module: str, message: str):
     current_time = get_formatted_time()
     try:
         status_str = _format_status(status_keymap[status], status_length)
@@ -29,7 +29,7 @@ def print_formatted_log(status: str, module: str, message: str):
     _write_to_file(log)
 
 
-def print_cog_error_log(module: str, function: str, error: Exception):
+def print_error_log(module: str, function: str, error: Exception):
     current_time = get_formatted_time()
     try:
         status = "error"
@@ -37,6 +37,20 @@ def print_cog_error_log(module: str, function: str, error: Exception):
     except KeyError:
         status_str = _format_status("NO KEYMAP", status_length)
     message = f"'{function}' has raised an error: {str(error)}"
+
+    log = f"{current_time} {status_str} {module} {message}"
+    print(log)
+    _write_to_file(log)
+
+
+def print_db_success_log(module: str, table_name: str, id: int):
+    current_time = get_formatted_time()
+    try:
+        status = "success"
+        status_str = _format_status(status_keymap[status], status_length)
+    except KeyError:
+        status_str = _format_status("NO KEYMAP", status_length)
+    message = f"data writed successfully at {table_name}:{id}"
 
     log = f"{current_time} {status_str} {module} {message}"
     print(log)
