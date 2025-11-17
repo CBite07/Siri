@@ -2,4 +2,4 @@
 
 cd "$(dirname "$0")"
 
-python3 -m discord_bot.run
+python3 -m bot_src.run

@@ -1,5 +1,5 @@
-from discord_bot.configs.log import LogStatusConfig, LogFileConfig
-from discord_bot.utils.time import get_formatted_time
+from utils.configs.log import LogStatusConfig, LogFileConfig
+from utils.time import get_formatted_time
 
 status_keymap = LogStatusConfig.STATUS_KEYMAP
 status_length = LogStatusConfig.STATUS_LENGTH

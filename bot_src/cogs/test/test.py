@@ -3,8 +3,8 @@ from discord import app_commands
 from discord.ext import commands
 import inspect
 
-from discord_bot.utils.log import print_log, print_error_log
-from discord_bot.utils.database import db
+from utils.log import print_log, print_error_log
+from utils.database import db
 
 from .send_message import send_message
 

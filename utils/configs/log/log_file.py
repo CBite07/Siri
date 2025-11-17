@@ -1,4 +1,4 @@
-from configs.path import PathConfig
+from utils.configs.path import PathConfig
 
 
 class LogFileConfig:

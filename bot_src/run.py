@@ -2,10 +2,10 @@ import asyncio
 import signal
 import sys
 
-from configs.path import PathConfig
-from discord_bot.main import run_bot
-from discord_bot.utils.log import print_log
-from discord_bot.utils.database import init_db
+from utils.configs.path import PathConfig
+from utils.log import print_log
+from utils.database import init_db
+from bot_src.main import run_bot
 
 
 loop = asyncio.new_event_loop()

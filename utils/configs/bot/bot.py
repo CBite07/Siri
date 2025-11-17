@@ -1,5 +1,5 @@
 import discord
-from configs.env import BOT_TOKEN, BOT_COMMAND_PREFIX
+from utils.configs.env import BOT_TOKEN, BOT_COMMAND_PREFIX
 
 
 class BotConfig:
@@ -12,5 +12,6 @@ class BotConfig:
         return BOT_COMMAND_PREFIX
 
     @staticmethod
-    def get_command_count(bot: discord.Intents):
-        return len(bot.tree.fetch_command(guild=guild))
+    async def get_command_count(bot: discord.Client):
+        commands = await bot.tree.fetch_commands()
+        return len(commands)

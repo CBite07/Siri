@@ -1,5 +1,0 @@
-1. main -> cogs -> utils -> configs 호출 구조.
-    1.1 config는 설정을 보관합니다.
-    1.2 utils는 config에 기반하는 함수들입니다.
-    1.3 cogs는 슬래시 명령어 등을 저장합니다.
-    1.4 main은 cogs를 불러와 슬래시 명령어를 외부에 보여줍니다.
