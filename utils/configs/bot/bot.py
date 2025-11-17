@@ -2,6 +2,8 @@ import discord
 from ..env import EnvConfig
 
 
+# Bot configuration class
+# code review result: nice. Useful static method to get command count.
 class BotConfig:
     TOKEN = EnvConfig.BOT_TOKEN
     COMMAND_PREFIX = EnvConfig.BOT_COMMAND_PREFIX

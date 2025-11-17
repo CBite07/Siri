@@ -1,8 +1,11 @@
+# import db session, table model module
 from .db import SessionLocal
 from .models.user_points import UserPoints
 
 
+# DB util class
 class DBUtils:
+    # get user by discord ID
     @staticmethod
     def get_user(discord_it: int):
         db = SessionLocal()
@@ -14,6 +17,8 @@ class DBUtils:
         finally:
             db.close()
 
+    # delete row by discord ID
+    @staticmethod
     def delete_user(discord_id: int):
         db = SessionLocal()
         try:
@@ -27,8 +32,9 @@ class DBUtils:
         finally:
             db.close()
 
+    # add new user by discord ID
     @staticmethod
-    def update_point(discord_id: int):
+    def add_user(discord_id: int):
         db = SessionLocal()
         try:
             new_user = UserPoints(discord_id=discord_id)
@@ -39,6 +45,7 @@ class DBUtils:
         finally:
             db.close()
 
+    # update user points by discord ID(Also add if there's no such user. but not nessecary)
     @staticmethod
     def update_user_points(discord_id: int, exp: int, level: int):
         db = SessionLocal()

@@ -5,7 +5,7 @@ import sys
 from bot_src.main import run_bot
 from utils.configs.path import PathConfig
 from utils.log import logger
-from utils.database import Base, engine, DBUtils
+from utils.database import Base, engine
 
 
 loop = asyncio.new_event_loop()
