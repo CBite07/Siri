@@ -7,14 +7,14 @@ file_address = LogFileConfig.FILE_ADDRESS
 file_encoding = LogFileConfig.FILE_ENCODING
 
 
+def _format_status(status: str, length: int) -> str:
+    return f"{status:<{length}}"
+
+
 def _write_to_file(log: str):
     file_address.parent.mkdir(parents=True, exist_ok=True)
     with open(file_address, "a", encoding=file_encoding) as f:
         f.write(f"{log}\n")
-
-
-def _format_status(status: str, length: int) -> str:
-    return f"{status:<{length}}"
 
 
 def print_log(status: str, module: str, message: str):

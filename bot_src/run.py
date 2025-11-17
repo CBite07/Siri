@@ -4,8 +4,8 @@ import sys
 
 from utils.configs.path import PathConfig
 from utils.log import print_log
-from utils.database import init_db
 from bot_src.main import run_bot
+from utils.database import Base, engine, DBUtils
 
 
 loop = asyncio.new_event_loop()
@@ -24,7 +24,7 @@ def handle_exit(sig, frame):
 signal.signal(signal.SIGINT, handle_exit)
 signal.signal(signal.SIGTERM, handle_exit)
 
-init_db()
+Base.metadata.create_all(bind=engine)
 
 if __name__ == "__main__":
     try:

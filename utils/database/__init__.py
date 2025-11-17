@@ -1,2 +1,3 @@
-from .database import db
-from .database_init import init_db
+from .db import Base, engine
+from .db_utils import DBUtils
+from .models.user_points import UserPoints

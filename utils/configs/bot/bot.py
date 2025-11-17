@@ -1,5 +1,5 @@
 import discord
-from utils.configs.env import BOT_TOKEN, BOT_COMMAND_PREFIX
+from ..env import BOT_TOKEN, BOT_COMMAND_PREFIX
 
 
 class BotConfig:

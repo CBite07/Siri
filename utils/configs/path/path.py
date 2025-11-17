@@ -2,7 +2,7 @@ from pathlib import Path
 
 
 class PathConfig:
-    ROOT_DIR = Path(__file__).parent.parent.parent
+    ROOT_DIR = Path(__file__).parent.parent.parent.parent
 
     DISCORD_BOT_DIR = ROOT_DIR / "bot_src"
     DISCORD_COG_DIR = DISCORD_BOT_DIR / "cogs"
@@ -13,4 +13,5 @@ class PathConfig:
 
     CONFIG_DIR = ROOT_DIR / "configs"
 
-    LOG_DIR = ROOT_DIR / "logs"
+    DATA_DIR = ROOT_DIR / "data"
+    LOG_DIR = DATA_DIR / "logs"
