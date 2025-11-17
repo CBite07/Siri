@@ -9,7 +9,7 @@ class PathConfig:
     CONFIG_DIR = DISCORD_BOT_DIR / "configs"
     UTIL_DIR = DISCORD_BOT_DIR / "utils"
     DISCORD_RUN_FILE = "bot_src.run"
-    COGS = []
+    COGS = ["bot_src.cogs.db_tester"]
 
     CONFIG_DIR = ROOT_DIR / "configs"
 

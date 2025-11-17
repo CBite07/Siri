@@ -14,8 +14,21 @@ class DBUtils:
         finally:
             db.close()
 
+    def delete_user(discord_id: int):
+        db = SessionLocal()
+        try:
+            user = (
+                db.query(UserPoints).filter(UserPoints.discord_id == discord_id).first()
+            )
+            if user:
+                db.delete(user)
+                db.commit()
+            return user
+        finally:
+            db.close()
+
     @staticmethod
-    def add_user(discord_id: int):
+    def update_point(discord_id: int):
         db = SessionLocal()
         try:
             new_user = UserPoints(discord_id=discord_id)

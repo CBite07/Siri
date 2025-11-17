@@ -2,7 +2,7 @@ import logging
 
 from utils.configs.path import PathConfig
 
-log_file_path = PathConfig.LOG_DIR / "siri_bot.log" 
+log_file_path = PathConfig.LOG_DIR / "siri_bot.log"
 
 logger = logging.getLogger("siri_logger")
 logger.setLevel(logging.DEBUG)
