@@ -1,16 +1,19 @@
 from .db import SessionLocal
 from .models.user_points import UserPoints
 
+
 class DBUtils:
     @staticmethod
     def get_user(discord_it: int):
         db = SessionLocal()
         try:
-            user = db.query(UserPoints).filter(UserPoints.discord_id == discord_it).first()
+            user = (
+                db.query(UserPoints).filter(UserPoints.discord_id == discord_it).first()
+            )
             return user
         finally:
             db.close()
-    
+
     @staticmethod
     def add_user(discord_id: int):
         db = SessionLocal()
@@ -22,12 +25,14 @@ class DBUtils:
             return new_user
         finally:
             db.close()
-    
+
     @staticmethod
     def update_user_points(discord_id: int, exp: int, level: int):
         db = SessionLocal()
         try:
-            user = db.query(UserPoints).filter(UserPoints.discord_id == discord_id).first()
+            user = (
+                db.query(UserPoints).filter(UserPoints.discord_id == discord_id).first()
+            )
             if user:
                 user.exp = exp
                 user.level = level

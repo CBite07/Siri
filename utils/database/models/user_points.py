@@ -10,6 +10,7 @@ class UserPoints(Base):
     exp = Column(Integer, default=0)
     level = Column(Integer, default=1)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False) 
+
 """
 +------------+---------------------+------+-----+---------------------+----------------+
 | Field      | Type                | Null | Key | Default             | Extra          |

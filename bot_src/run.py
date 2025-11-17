@@ -2,9 +2,9 @@ import asyncio
 import signal
 import sys
 
-from utils.configs.path import PathConfig
-from utils.log import print_log
 from bot_src.main import run_bot
+from utils.configs.path import PathConfig
+from utils.log import logger
 from utils.database import Base, engine, DBUtils
 
 
@@ -14,9 +14,8 @@ asyncio.set_event_loop(loop)
 run_filename = PathConfig.DISCORD_RUN_FILE
 
 
-
 def handle_exit(sig, frame):
-    print_log("info", run_filename, f"Bot stopping by signal {sig}")
+    logger.info(f"Received exit signal {sig}. Shutting down bot...")
     loop.stop()
     sys.exit(0)
 
@@ -30,9 +29,9 @@ if __name__ == "__main__":
     try:
         loop.run_until_complete(run_bot())
     except KeyboardInterrupt:
-        print_log("info", run_filename, "Bot stopped by KeyboardInterrupt")
+        logger.info("Bot stopped by KeyboardInterrupt")
     except Exception as e:
-        print_log("error", run_filename, f"Unexpected error: {e}")
+        logger.error(f"Bot stopped by Exception: {e}")
     finally:
+        logger.info("Bot event loop closing")
         loop.close()
-        print_log("info", run_filename, "Event loop closed. Goodbye!")

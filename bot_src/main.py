@@ -4,30 +4,26 @@ import os
 
 from utils.configs.bot import BotConfig
 from utils.configs.path import PathConfig
-from utils.log import print_log
+from utils.log import logger
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix=BotConfig.get_command_prefix, intents=intents)
+bot = commands.Bot(command_prefix=BotConfig.COMMAND_PREFIX, intents=intents)
 
 
 @bot.event
 async def on_ready():
-    print_log("start", __name__, "Bot logged in successfully.")
+    logger.info(f"Bot logged in as {bot.user} (ID: {bot.user.id})")
     await bot.tree.sync()
-    print_log(
-        "start",
-        __name__,
-        f"Bot synchronized {await BotConfig.get_command_count(bot)} commands successfully.",
-    )
+    logger.info("Bot command tree synced successfully")
 
 
 async def load_cogs():
     for cog in PathConfig.COGS:
         await bot.load_extension(cog)
-        print_log("start", __name__, f"Bot loaded {cog} successfully")
+        logger.info(f"Loaded cog: {cog}")
 
 
 async def run_bot():
     await load_cogs()
-    await bot.start(BotConfig.get_bot_token())
+    await bot.start(BotConfig.TOKEN)
