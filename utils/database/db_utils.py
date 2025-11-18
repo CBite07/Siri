@@ -1,124 +1,148 @@
 # import db session, table model module
+from sqlalchemy.orm import Session
+from sqlalchemy.dialects.mysql import insert
+from contextlib import contextmanager
+from typing import Generator, Optional
+from datetime import date
 from .db import SessionLocal
 from .models.user_points import UserPoints
 from .models.user_attendance import UserAttendance
 
-from sqlalchemy.dialects.mysql import insert
-
-
 # DB util class
 class DBUtils:
-    # get user by discord ID
+    # Provides a SQLAlchemy Session object and automatically closes it upon exit.
     @staticmethod
-    def get_user(discord_it: int):
-        db = SessionLocal()
+    @contextmanager
+    def _get_session() -> Generator[Session, None, None]:
+        db_session = SessionLocal()
         try:
-            user = (
-                db.query(UserPoints).filter(UserPoints.discord_id == discord_it).first()
+            yield db_session
+        finally:
+            db_session.close()
+
+    # Creates and adds a new UserPoints record for the given Discord ID.
+    @staticmethod
+    def create_user_point_record(discord_id: int) -> None:
+        with DBUtils._get_session() as db_session:
+            new_user_record = UserPoints(discord_id=discord_id)
+            db_session.add(new_user_record)
+            try:
+                db_session.commit()
+            except Exception:
+                db_session.rollback()
+                raise
+
+    # Retrieves the experience (exp) of a user by Discord ID.
+    @staticmethod
+    def read_user_exp_record(discord_id: int) -> Optional[int]:
+        with DBUtils._get_session() as db_session:
+            user_exp = (
+                db_session.query(UserPoints.exp)
+                .filter(UserPoints.discord_id == discord_id)
+                .scalar()
             )
-            return user
-        finally:
-            db.close()
+            return user_exp
 
-    # delete row by discord ID
+    # Retrieves the level of a user by Discord ID.
     @staticmethod
-    def delete_user(discord_id: int):
-        db = SessionLocal()
-        try:
-            user = (
-                db.query(UserPoints).filter(UserPoints.discord_id == discord_id).first()
+    def read_user_level_record(discord_id: int) -> Optional[int]:
+        with DBUtils._get_session() as db_session:
+            user_level = (
+                db_session.query(UserPoints.level)
+                .filter(UserPoints.discord_id == discord_id)
+                .scalar()
             )
-            if user:
-                db.delete(user)
-                db.commit()
-            return user
-        finally:
-            db.close()
+            return user_level
 
-    # add new user by discord ID
+    # Updates the experience (exp) information for a user.
     @staticmethod
-    def add_user(discord_id: int):
-        db = SessionLocal()
-        try:
-            new_user = UserPoints(discord_id=discord_id)
-            db.add(new_user)
-            db.commit()
-            db.refresh(new_user)
-            return new_user
-        finally:
-            db.close()
-
-    @staticmethod
-    def get_user_points(discord_id: int):
-        db = SessionLocal()
-        try:
-            user = (
-                db.query(UserPoints).filter(UserPoints.discord_id == discord_id).first()
+    def update_user_exp(discord_id: int, *, exp: int) -> None:
+        with DBUtils._get_session() as db_session:
+            user_to_update = (
+                db_session.query(UserPoints) 
+                .filter(UserPoints.discord_id == discord_id)
+                .first()
             )
-            if user:
-                return user.exp, user.level
-            return None
-        finally:
-            db.close()
+            if user_to_update:
+                try:
+                    user_to_update.exp = exp
+                    db_session.commit()
+                except Exception:
+                    db_session.rollback()
+                    raise
 
-    # update user points by discord ID(Also add if there's no such user. but not nessecary)
+    # Updates the level information for a user.
     @staticmethod
-    def update_user_points(discord_id: int, exp: int, level: int):
-        db = SessionLocal()
-        try:
-            user = (
-                db.query(UserPoints).filter(UserPoints.discord_id == discord_id).first()
+    def update_user_level(discord_id: int, *, level: int) -> None:
+        with DBUtils._get_session() as db_session:
+            user_to_update = (
+                db_session.query(UserPoints)
+                .filter(UserPoints.discord_id == discord_id)
+                .first()
             )
-            if user:
-                user.exp = exp
-                user.level = level
-                db.commit()
-                db.refresh(user)
-            return user
-        finally:
-            db.close()
+            if user_to_update:
+                try:
+                    user_to_update.level = level
+                    db_session.commit()
+                except Exception:
+                    db_session.rollback()
+                    raise
 
+    # Deletes a UserPoints record by Discord ID.
     @staticmethod
-    def get_user_attendanced_date(discord_id: int, date):
-        db = SessionLocal()
-        try:
-            attendanced_date = (
-                db.query(UserAttendance.date)
+    def delete_user_point_record(discord_id: int) -> None:
+        with DBUtils._get_session() as db_session:
+            user_to_delete = (
+                db_session.query(UserPoints)
+                .filter(UserPoints.discord_id == discord_id)
+                .first()
+            )
+            if user_to_delete:
+                try:
+                    db_session.delete(user_to_delete)
+                    db_session.commit()
+                except Exception:
+                    db_session.rollback()
+                    raise
+
+    # Checks if an attendance record exists for the given Discord ID and date.
+    @staticmethod
+    def read_attendanced_date_record(discord_id: int, date: date) -> Optional[date]:
+        with DBUtils._get_session() as db_session:
+            existing_date = (
+                db_session.query(UserAttendance.date)
                 .filter(
                     UserAttendance.discord_id == discord_id,
                     UserAttendance.date == date,
                 )
-                .first()
+                .scalar()
             )
-            return attendanced_date
-        finally:
-            db.close()
+            return existing_date
 
+    # Retrieves the current attendance streak value for a user.
     @staticmethod
-    def get_user_streak(discord_id: int):
-        db = SessionLocal()
-        try:
-            attendance = (
-                db.query(UserAttendance.streak)
-                .filter(
-                    UserAttendance.discord_id == discord_id,
-                )
-                .first()
+    def read_attendance_streak_record(discord_id: int) -> Optional[int]:
+        with DBUtils._get_session() as db_session:
+            streak_value = (
+                db_session.query(UserAttendance.streak)
+                .filter(UserAttendance.discord_id == discord_id)
+                .scalar()
             )
-            return attendance
-        finally:
-            db.close()
+            return streak_value
 
+
+    # Inserts an attendance record or updates the streak if a record already exists (Upsert).
     @staticmethod
-    def update_user_attendance(discord_id: int, date, streak: int):
-        db = SessionLocal()
-        try:
-            stmt = (
+    def update_attendance_record(discord_id: int, *, date: date, streak: int) -> None:
+        with DBUtils._get_session() as db_session:
+            upsert_stmt = (
                 insert(UserAttendance)
                 .values(discord_id=discord_id, date=date, streak=streak)
                 .on_duplicate_key_update(streak=streak)
             )
-            db.execute(stmt)
-            db.commit()
-        finally:
-            db.close()
+            try:
+                db_session.execute(upsert_stmt)
+                db_session.commit()
+            except Exception:
+                db_session.rollback()
+                raise

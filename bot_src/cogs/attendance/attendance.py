@@ -15,7 +15,9 @@ class Attendance(commands.Cog):
     def _is_attendanceable(self, discord_id: int) -> bool:
         from datetime import date
 
-        attendanced_date = DBUtils.get_user_attendanced_date(discord_id, date.today())
+        attendanced_date = DBUtils.read_attendanced_date_record(
+            discord_id, date.today()
+        )
         return attendanced_date is None
 
     @commands.Cog.listener()
@@ -26,18 +28,12 @@ class Attendance(commands.Cog):
         if message.content.strip() == "ㅊㅊ":
             if self._is_attendanceable(message.author.id):
                 try:
-                    await message.channel.send(
-                        f"{message.author.mention}, your attendance has been recorded!"
-                    )
-
-                    exp, level = DBUtils.get_user_points(message.author.id)
-                    streak = DBUtils.get_user_streak(message.author.id)
-                    DBUtils.update_user_points(
-                        message.author.id, exp=exp + 10, level=level
-                    )
-                    DBUtils.update_user_attendance(
+                    exp = DBUtils.read_user_exp_record(message.author.id)
+                    streak = DBUtils.read_attendance_streak_record(message.author.id)
+                    DBUtils.update_user_exp(message.author.id, exp=exp + 10)
+                    DBUtils.update_attendance_record(
                         message.author.id,
-                        date.today(),
+                        date=date.today(),
                         streak=streak + 1 if streak else 1,
                     )
                     reaction = "✅"
@@ -52,9 +48,6 @@ class Attendance(commands.Cog):
                 await message.add_reaction(reaction)
             else:
                 await message.add_reaction("❌")
-                await message.channel.send(
-                    f"{message.author.mention}, you have already recorded your attendance today."
-                )
 
 
 async def setup(bot: commands.Bot):

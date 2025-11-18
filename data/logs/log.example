@@ -1,2 +1,3 @@
-YYYY-MM-DD HH:mm:SS START     discord_bot.main Bot loaded discord_bot.cogs.test.test successfully
-YYYY-MM-DD HH:mm:SS START     discord_bot.main Bot logged in successfully.
+YYYY-MM-DD HH:MM:SS,SSS - siri_logger - INFO - Loaded cog: bot_src.cogs.cog.cog
+YYYY-MM-DD HH:MM:SS,SSS - siri_logger - INFO - Received exit signal 2. Shutting down bot...
+YYYY-MM-DD HH:MM:SS,SSS - siri_logger - INFO - Bot event loop closing
