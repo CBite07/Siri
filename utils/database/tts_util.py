@@ -24,7 +24,13 @@ class TTSDBUtil:
                 .all()
             )
             if records:
-                return [{"channel_id": r.channel_id, "lang": r.channel_lang} for r in records]
+                return [
+                    {
+                        "channel_id": r.channel_id, 
+                        "lang": r.channel_lang
+                    } 
+                    for r in records
+                ]
             return []
 
     @staticmethod
@@ -34,7 +40,9 @@ class TTSDBUtil:
             channel_id=channel_id,
             channel_lang=lang,
         )
-        upsert_stmt = insert_stmt.on_duplicate_key_update(channel_lang=insert_stmt.excluded.channel_lang)
+        upsert_stmt = (
+            insert_stmt.on_duplicate_key_update(channel_lang=lang)
+        )
         with TTSDBUtil._get_session() as db_session:
             try:
                 db_session.execute(upsert_stmt)

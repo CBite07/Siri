@@ -1,5 +1,6 @@
 from typing import Dict, List, Any
 import io
+import re
 
 import discord
 from discord import app_commands
@@ -19,7 +20,7 @@ class TTSCog(commands.Cog):
             print(error)
 
         guild_queue = self.queue.get(guild_id)
-        
+
         if not guild_queue:
             return
 
@@ -32,6 +33,12 @@ class TTSCog(commands.Cog):
                 after=lambda e: self._play_next_in_queue(guild_id, e),
             )
 
+    def _message_replacement(self, text: str) -> str:
+        text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+        text = re.sub(r"`[^`]+`", "", text)
+
+        return text.strip()
+
     @app_commands.command(
         name="tts_채널_지정", description="TTS에 사용될 채널을 지정합니다."
     )
@@ -42,11 +49,12 @@ class TTSCog(commands.Cog):
     ):
         guild_id = interaction.guild.id
         channel_id = channel.id
-        
+
         TTSDBUtil.upsert_tts_channel(guild_id, channel_id, lang="ko")
 
         await interaction.response.send_message(
-            f"{channel.mention} 채널이 TTS용으로 지정되었습니다. (기본 언어: 한국어)", ephemeral=True
+            f"{channel.mention} 채널이 TTS용으로 지정되었습니다. (기본 언어: 한국어)",
+            ephemeral=True,
         )
 
     @app_commands.command(
@@ -59,7 +67,7 @@ class TTSCog(commands.Cog):
     ):
         guild_id = interaction.guild.id
         channel_id = channel.id
-        
+
         TTSDBUtil.delete_guild_tts_channel(guild_id, channel_id)
 
         await interaction.response.send_message(
@@ -68,26 +76,32 @@ class TTSCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.author == self.bot.user or not message.guild or message.content.startswith(self.bot.command_prefix):
+        if (
+            message.author == self.bot.user
+            or not message.guild
+            or message.content.startswith(self.bot.command_prefix)
+        ):
             return
 
         guild = message.guild
         channel = message.channel
-        
+
         db_records: List[Dict[str, Any]] = TTSDBUtil.read_tts_data(guild.id)
 
         tts_channel_data = next(
-            (record for record in db_records if record['channel_id'] == channel.id), 
-            None
+            (record for record in db_records if record["channel_id"] == channel.id),
+            None,
         )
 
         if tts_channel_data:
-            tts_lang = tts_channel_data.get('lang', 'ko') 
-            
+            tts_lang = tts_channel_data.get("lang", "ko")
+            tts_message =  self._message_replacement(message.content)
+
             try:
-                tts = gTTS(text=message.content, lang=tts_lang)
-            except:
-                tts = gTTS(text=message.content, lang="ko")
+                tts = gTTS(text=tts_message, lang=tts_lang)
+            except KeyError:
+                tts = gTTS(text=tts_message, lang="ko")
+                await message.channel.send(f"{tts_lang}을 지원하지 않습니다.")
             fp = io.BytesIO()
             tts.write_to_fp(fp)
             fp.seek(0)
@@ -96,10 +110,10 @@ class TTSCog(commands.Cog):
                 self.queue[guild.id] = []
 
             voice_client = guild.voice_client
-            
+
             if not voice_client:
                 return
-            
+
             if voice_client.is_playing() or self.queue[guild.id]:
                 self.queue[guild.id].append(fp)
             else:

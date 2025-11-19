@@ -10,7 +10,7 @@ from .models.user_level import UserLevel
 
 
 class LevelDBUtil:
-    
+
     @staticmethod
     @contextmanager
     def _get_session() -> Generator[Session, None, None]:
@@ -21,23 +21,16 @@ class LevelDBUtil:
             db_session.close()
 
     @staticmethod
-    def upsert_level_data(discord_id: int, exp: int, level: int, created_at: date) -> None:
+    def upsert_level_data(
+        discord_id: int, exp: int, level: int, created_at: date
+    ) -> None:
         with LevelDBUtil._get_session() as db_session:
-            insert_statement = (
-                insert(UserLevel)
-                .values(
-                    discord_id=discord_id,
-                    exp=exp,
-                    level=level,
-                    created_at=created_at
-                )
+            insert_statement = insert(UserLevel).values(
+                discord_id=discord_id, exp=exp, level=level, created_at=created_at
             )
 
-            upsert_statement = (
-                insert_statement.on_duplicate_key_update(
-                    exp = exp,
-                    level=level
-                )
+            upsert_statement = insert_statement.on_duplicate_key_update(
+                exp=exp, level=level
             )
 
             try:
@@ -52,9 +45,7 @@ class LevelDBUtil:
         with LevelDBUtil._get_session() as db_session:
             user_to_read = (
                 db_session.query(UserLevel)
-                .filter(
-                    UserLevel.discord_id == discord_id
-                )
+                .filter(UserLevel.discord_id == discord_id)
                 .first()
             )
 
@@ -63,7 +54,7 @@ class LevelDBUtil:
                     "discord_id": user_to_read.discord_id,
                     "exp": user_to_read.exp,
                     "level": user_to_read.level,
-                    "created_at": user_to_read.created_at
+                    "created_at": user_to_read.created_at,
                 }
             return None
 
@@ -72,9 +63,7 @@ class LevelDBUtil:
         with LevelDBUtil._get_session() as db_session:
             user_to_delete = (
                 db_session.query(UserLevel)
-                .filter(
-                    UserLevel.discord_id == discord_id
-                )
+                .filter(UserLevel.discord_id == discord_id)
                 .first()
             )
 

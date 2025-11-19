@@ -2,7 +2,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from datetime import date
+from datetime import date, timedelta
 from typing import Optional, Dict, Any
 
 from utils.log import logger
@@ -14,15 +14,15 @@ class Attendance(commands.Cog):
         self.bot = bot
 
     def _get_attendance_data(self, discord_id: int) -> Optional[Dict[str, Any]]:
-        return AttendanceDBUtil.read_attendance_record(discord_id)
+        return AttendanceDBUtil.read_attendance_data(discord_id)
 
     def _is_attendanceable(self, discord_id: int) -> bool:
         attendance_data = self._get_attendance_data(discord_id)
-        
+
         if attendance_data is None:
             return True
 
-        last_date: date = attendance_data['date']
+        last_date: date = attendance_data["date"]
         return last_date < date.today()
 
     @commands.Cog.listener()
@@ -33,34 +33,48 @@ class Attendance(commands.Cog):
         if message.content.strip() == "ㅊㅊ":
             if self._is_attendanceable(message.author.id):
                 user_id = message.author.id
-                
+
+                yesterday = date.today() - timedelta(days=1)
+
                 attendance_data = AttendanceDBUtil.read_attendance_data(user_id)
                 level_data = LevelDBUtil.read_level_data(user_id)
-                
-                current_exp = level_data.get('exp', 0) if level_data else 0
-                current_streak = attendance_data.get('streak', 0) if attendance_data else 0
-                current_most_streak = attendance_data.get('most_streak', 0) if attendance_data else 0
-                
+
+                current_exp = level_data.get("exp", 0) if level_data else 0
+                current_streak = (
+                    attendance_data.get("streak", 0) if attendance_data else 0
+                )
+                current_most_streak = (
+                    attendance_data.get("most_streak", 0) if attendance_data else 0
+                )
+                current_attendance_date = (
+                    attendance_data.get("date", 0) if attendance_data else 0
+                )
+
                 new_exp = current_exp + 10
-                new_streak = current_streak + 1
+                new_streak = (
+                    current_streak + 1 if current_attendance_date == yesterday else 1
+                )
                 new_most_streak = max(current_most_streak, new_streak)
 
                 try:
                     LevelDBUtil.upsert_level_data(
                         discord_id=user_id,
                         exp=new_exp,
-                        level=level_data.get('level', 1) if level_data else 1,
-                        created_at=level_data.get('created_at', date.today()) if level_data else date.today()
+                        level=level_data.get("level", 1) if level_data else 1,
+                        created_at=(
+                            level_data.get("created_at", date.today())
+                            if level_data
+                            else date.today()
+                        ),
                     )
-                    
+
                     AttendanceDBUtil.upsert_attendance_data(
                         discord_id=user_id,
                         date=date.today(),
                         streak=new_streak,
                         most_streak=new_most_streak,
-                        created_at=attendance_data.get('created_at', date.today()) if attendance_data else date.today()
                     )
-                    
+
                     reaction = "✅"
                     logger.info(
                         f"Attendance recorded for user: {message.author} (ID: {message.author.id}). New Streak: {new_streak}"

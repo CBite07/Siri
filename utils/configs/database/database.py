@@ -1,5 +1,6 @@
 from utils.configs.env import EnvConfig
 
+
 class DBConfig:
     DB_NAME = EnvConfig.DB_NAME
     DB_USER = EnvConfig.DB_USER
