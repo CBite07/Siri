@@ -1,16 +1,15 @@
-# import db session, table model module
+from contextlib import contextmanager
+from typing import Generator, Optional, Any
+from datetime import date
+
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.mysql import insert
-from contextlib import contextmanager
-from typing import Generator, Optional
-from datetime import date
+
 from .db import SessionLocal
 from .models.user_attendance import UserAttendance
 
 
-# DB util class
 class AttendanceDBUtil:
-    # Provides a SQLAlchemy Session object and automatically closes it upon exit.
     @staticmethod
     @contextmanager
     def _get_session() -> Generator[Session, None, None]:
@@ -21,57 +20,65 @@ class AttendanceDBUtil:
             db_session.close()
 
     @staticmethod
-    def create_attendance_record(discord_id: int) -> None:
+    def upsert_attendance_data(discord_id: int, date: date, streak: int, most_streak: int) -> None:
         with AttendanceDBUtil._get_session() as db_session:
-            new_attendance_record = UserAttendance(
-                discord_id=discord_id,
-                date=date.today(),
-                streak=1
-            )
-            try:
-                db_session.add(new_attendance_record)
-                db_session.commit()
-            except Exception:
-                db_session.rollback()
-                raise
-
-    # Checks if an attendance record exists for the given Discord ID and date.
-    @staticmethod
-    def read_attendanced_date_record(discord_id: int, date: date) -> Optional[date]:
-        with AttendanceDBUtil._get_session() as db_session:
-            existing_date = (
-                db_session.query(UserAttendance.date)
-                .filter(
-                    UserAttendance.discord_id == discord_id,
-                    UserAttendance.date == date,
-                )
-                .scalar()
-            )
-            return existing_date
-
-    # Retrieves the current attendance streak value for a user.
-    @staticmethod
-    def read_attendance_streak_record(discord_id: int) -> Optional[int]:
-        with AttendanceDBUtil._get_session() as db_session:
-            streak_value = (
-                db_session.query(UserAttendance.streak)
-                .filter(UserAttendance.discord_id == discord_id)
-                .scalar()
-            )
-            return streak_value
-
-    # Inserts an attendance record or updates the streak if a record already exists (Upsert).
-    @staticmethod
-    def update_attendance_record(discord_id: int, *, date: date, streak: int) -> None:
-        with AttendanceDBUtil._get_session() as db_session:
-            upsert_stmt = (
+            insert_statement = (
                 insert(UserAttendance)
-                .values(discord_id=discord_id, date=date, streak=streak)
-                .on_duplicate_key_update(streak=streak)
+                .values(
+                    discord_id=discord_id,
+                    date=date,
+                    streak=streak,
+                    most_streak=most_streak
+                )
             )
+            
+            upsert_statement = (
+                insert_statement.on_duplicate_key_update(
+                    discord_id=discord_id,
+                    date=date,
+                    streak=streak,
+                    most_streak=most_streak
+                )
+            )
+
             try:
-                db_session.execute(upsert_stmt)
+                db_session.execute(upsert_statement)
                 db_session.commit()
             except Exception:
                 db_session.rollback()
                 raise
+
+    @staticmethod
+    def read_attendance_data(discord_id: int) -> Optional[dict[str, Any]]:
+        with AttendanceDBUtil._get_session() as db_session:
+            user_to_read = (
+                db_session.query(UserAttendance)
+                .filter(UserAttendance.discord_id == discord_id)
+                .first()
+            )
+
+            if user_to_read:
+                return {
+                    "discord_id": user_to_read.discord_id,
+                    "date": user_to_read.date,
+                    "streak": user_to_read.streak,
+                    "most_streak": user_to_read.most_streak
+                }
+            return None
+
+    @staticmethod
+    def delete_attendance_date(discord_id: int) -> Optional[dict[str, Any]]:
+        with AttendanceDBUtil._get_session() as db_sesion:
+            user_to_delete = (
+                db_sesion.query(UserAttendance)
+                .filter(UserAttendance.discord_id == discord_id)
+                .first()
+            )
+
+            if user_to_delete:
+                try:
+                    db_sesion.delete(user_to_delete)
+                    db_sesion.commit()
+                except Exception:
+                    db_sesion.rollback()
+                    raise

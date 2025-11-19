@@ -3,6 +3,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from datetime import date
+from typing import Optional, Dict, Any
 
 from utils.log import logger
 from utils.database import LevelDBUtil, AttendanceDBUtil
@@ -12,13 +13,17 @@ class Attendance(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    def _is_attendanceable(self, discord_id: int) -> bool:
-        from datetime import date
+    def _get_attendance_data(self, discord_id: int) -> Optional[Dict[str, Any]]:
+        return AttendanceDBUtil.read_attendance_record(discord_id)
 
-        attendanced_date = AttendanceDBUtil.read_attendanced_date_record(
-            discord_id, date.today()
-        )
-        return attendanced_date is None
+    def _is_attendanceable(self, discord_id: int) -> bool:
+        attendance_data = self._get_attendance_data(discord_id)
+        
+        if attendance_data is None:
+            return True
+
+        last_date: date = attendance_data['date']
+        return last_date < date.today()
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -27,23 +32,38 @@ class Attendance(commands.Cog):
 
         if message.content.strip() == "ㅊㅊ":
             if self._is_attendanceable(message.author.id):
+                user_id = message.author.id
+                
+                attendance_data = AttendanceDBUtil.read_attendance_data(user_id)
+                level_data = LevelDBUtil.read_level_data(user_id)
+                
+                current_exp = level_data.get('exp', 0) if level_data else 0
+                current_streak = attendance_data.get('streak', 0) if attendance_data else 0
+                current_most_streak = attendance_data.get('most_streak', 0) if attendance_data else 0
+                
+                new_exp = current_exp + 10
+                new_streak = current_streak + 1
+                new_most_streak = max(current_most_streak, new_streak)
+
                 try:
-                    exp = LevelDBUtil.read_user_exp_record(message.author.id)
-                    streak = AttendanceDBUtil.read_attendance_streak_record(
-                        message.author.id
+                    LevelDBUtil.upsert_level_data(
+                        discord_id=user_id,
+                        exp=new_exp,
+                        level=level_data.get('level', 1) if level_data else 1,
+                        created_at=level_data.get('created_at', date.today()) if level_data else date.today()
                     )
-                    if streak:
-                        LevelDBUtil.update_user_exp(message.author.id, exp=exp + 10)
-                        AttendanceDBUtil.update_attendance_record(
-                            message.author.id,
-                            date=date.today(),
-                            streak=streak + 1,
-                        )
-                    else:
-                        AttendanceDBUtil.create_attendance_record(message.author.id)
+                    
+                    AttendanceDBUtil.upsert_attendance_data(
+                        discord_id=user_id,
+                        date=date.today(),
+                        streak=new_streak,
+                        most_streak=new_most_streak,
+                        created_at=attendance_data.get('created_at', date.today()) if attendance_data else date.today()
+                    )
+                    
                     reaction = "✅"
                     logger.info(
-                        f"Attendance recorded for user: {message.author} (ID: {message.author.id})"
+                        f"Attendance recorded for user: {message.author} (ID: {message.author.id}). New Streak: {new_streak}"
                     )
                 except Exception as e:
                     reaction = "❌"

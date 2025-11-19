@@ -1,16 +1,16 @@
-# import db session, table model module
+from datetime import date
+from typing import Generator, Optional, Dict, Any
+from contextlib import contextmanager
+
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.mysql import insert
-from contextlib import contextmanager
-from typing import Generator, Optional
-from datetime import date
+
 from .db import SessionLocal
-from .models.user_points import UserPoints
+from .models.user_level import UserLevel
 
 
-# DB util class
 class LevelDBUtil:
-    # Provides a SQLAlchemy Session object and automatically closes it upon exit.
+    
     @staticmethod
     @contextmanager
     def _get_session() -> Generator[Session, None, None]:
@@ -20,83 +20,64 @@ class LevelDBUtil:
         finally:
             db_session.close()
 
-    # Creates and adds a new UserPoints record for the given Discord ID.
     @staticmethod
-    def create_user_point_record(discord_id: int) -> None:
+    def upsert_level_data(discord_id: int, exp: int, level: int, created_at: date) -> None:
         with LevelDBUtil._get_session() as db_session:
-            new_user_record = UserPoints(discord_id=discord_id)
+            insert_statement = (
+                insert(UserLevel)
+                .values(
+                    discord_id=discord_id,
+                    exp=exp,
+                    level=level,
+                    created_at=created_at
+                )
+            )
+
+            upsert_statement = (
+                insert_statement.on_duplicate_key_update(
+                    exp = exp,
+                    level=level
+                )
+            )
+
             try:
-                db_session.add(new_user_record)
+                db_session.execute(upsert_statement)
                 db_session.commit()
             except Exception:
                 db_session.rollback()
                 raise
 
-    # Retrieves the experience (exp) of a user by Discord ID.
     @staticmethod
-    def read_user_exp_record(discord_id: int) -> Optional[int]:
+    def read_level_data(discord_id: int) -> Optional[Dict[str, Any]]:
         with LevelDBUtil._get_session() as db_session:
-            user_exp = (
-                db_session.query(UserPoints.exp)
-                .filter(UserPoints.discord_id == discord_id)
-                .scalar()
-            )
-            return user_exp
-
-    # Retrieves the level of a user by Discord ID.
-    @staticmethod
-    def read_user_level_record(discord_id: int) -> Optional[int]:
-        with LevelDBUtil._get_session() as db_session:
-            user_level = (
-                db_session.query(UserPoints.level)
-                .filter(UserPoints.discord_id == discord_id)
-                .scalar()
-            )
-            return user_level
-
-    # Updates the experience (exp) information for a user.
-    @staticmethod
-    def update_user_exp(discord_id: int, *, exp: int) -> None:
-        with LevelDBUtil._get_session() as db_session:
-            user_to_update = (
-                db_session.query(UserPoints)
-                .filter(UserPoints.discord_id == discord_id)
+            user_to_read = (
+                db_session.query(UserLevel)
+                .filter(
+                    UserLevel.discord_id == discord_id
+                )
                 .first()
             )
-            if user_to_update:
-                try:
-                    user_to_update.exp = exp
-                    db_session.commit()
-                except Exception:
-                    db_session.rollback()
-                    raise
 
-    # Updates the level information for a user.
-    @staticmethod
-    def update_user_level(discord_id: int, *, level: int) -> None:
-        with LevelDBUtil._get_session() as db_session:
-            user_to_update = (
-                db_session.query(UserPoints)
-                .filter(UserPoints.discord_id == discord_id)
-                .first()
-            )
-            if user_to_update:
-                try:
-                    user_to_update.level = level
-                    db_session.commit()
-                except Exception:
-                    db_session.rollback()
-                    raise
+            if user_to_read:
+                return {
+                    "discord_id": user_to_read.discord_id,
+                    "exp": user_to_read.exp,
+                    "level": user_to_read.level,
+                    "created_at": user_to_read.created_at
+                }
+            return None
 
-    # Deletes a UserPoints record by Discord ID.
     @staticmethod
-    def delete_user_point_record(discord_id: int) -> None:
+    def delete_level_data(discord_id: int) -> None:
         with LevelDBUtil._get_session() as db_session:
             user_to_delete = (
-                db_session.query(UserPoints)
-                .filter(UserPoints.discord_id == discord_id)
+                db_session.query(UserLevel)
+                .filter(
+                    UserLevel.discord_id == discord_id
+                )
                 .first()
             )
+
             if user_to_delete:
                 try:
                     db_session.delete(user_to_delete)

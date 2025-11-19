@@ -7,8 +7,8 @@ class PathConfig:
 
     DISCORD_RUN_FILE = "bot_src.run"
     DISCORD_BOT_DIR = ROOT_DIR / "bot_src"
-    CONFIG_DIR = DISCORD_BOT_DIR / "configs"
-    UTIL_DIR = DISCORD_BOT_DIR / "utils"
+    UTIL_DIR = ROOT_DIR / "utils"
+    CONFIG_DIR = UTIL_DIR / "configs"
 
     DISCORD_COG_DIR = DISCORD_BOT_DIR / "cogs"
     COGS = [
