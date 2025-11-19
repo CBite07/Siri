@@ -1,3 +1,4 @@
 from .db import Base, engine
-from .db_utils import DBUtils
-from .models.user_points import UserPoints
+from .level_util import LevelDBUtil
+from .attendance_util import AttendanceDBUtil
+from .tts_util import TTSDBUtil

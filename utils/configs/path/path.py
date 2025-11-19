@@ -13,8 +13,9 @@ class PathConfig:
     DISCORD_COG_DIR = DISCORD_BOT_DIR / "cogs"
     COGS = [
         "bot_src.cogs.attendance.attendance",
-        "bot_src.cogs.tts.tts",
-    ]  # list of cog module paths
+        "bot_src.cogs.voice.voice",
+        "bot_src.cogs.voice.tts",
+    ]
 
     DATA_DIR = ROOT_DIR / "data"
     LOG_DIR = DATA_DIR / "logs"

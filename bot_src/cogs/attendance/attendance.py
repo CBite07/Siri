@@ -5,7 +5,7 @@ from discord.ext import commands
 from datetime import date
 
 from utils.log import logger
-from utils.database import DBUtils
+from utils.database import LevelDBUtil, AttendanceDBUtil
 
 
 class Attendance(commands.Cog):
@@ -15,7 +15,7 @@ class Attendance(commands.Cog):
     def _is_attendanceable(self, discord_id: int) -> bool:
         from datetime import date
 
-        attendanced_date = DBUtils.read_attendanced_date_record(
+        attendanced_date = AttendanceDBUtil.read_attendanced_date_record(
             discord_id, date.today()
         )
         return attendanced_date is None
@@ -28,10 +28,12 @@ class Attendance(commands.Cog):
         if message.content.strip() == "ㅊㅊ":
             if self._is_attendanceable(message.author.id):
                 try:
-                    exp = DBUtils.read_user_exp_record(message.author.id)
-                    streak = DBUtils.read_attendance_streak_record(message.author.id)
-                    DBUtils.update_user_exp(message.author.id, exp=exp + 10)
-                    DBUtils.update_attendance_record(
+                    exp = LevelDBUtil.read_user_exp_record(message.author.id)
+                    streak = AttendanceDBUtil.read_attendance_streak_record(
+                        message.author.id
+                    )
+                    LevelDBUtil.update_user_exp(message.author.id, exp=exp + 10)
+                    AttendanceDBUtil.update_attendance_record(
                         message.author.id,
                         date=date.today(),
                         streak=streak + 1 if streak else 1,

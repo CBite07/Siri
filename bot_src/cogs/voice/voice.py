@@ -3,7 +3,7 @@ from discord import app_commands
 from discord.ext import commands
 
 
-class TTSCog(commands.Cog):
+class VoiceCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
@@ -57,4 +57,4 @@ class TTSCog(commands.Cog):
 
 
 async def setup(bot: commands.Bot):
-    await bot.add_cog(TTSCog(bot))
+    await bot.add_cog(VoiceCog(bot))
