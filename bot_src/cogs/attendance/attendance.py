@@ -32,13 +32,15 @@ class Attendance(commands.Cog):
                     streak = AttendanceDBUtil.read_attendance_streak_record(
                         message.author.id
                     )
-                    streak = streak or 0 
-                    LevelDBUtil.update_user_exp(message.author.id, exp=exp + 10)
-                    AttendanceDBUtil.update_attendance_record(
-                        message.author.id,
-                        date=date.today(),
-                        streak=streak + 1,
-                    )
+                    if streak:
+                        LevelDBUtil.update_user_exp(message.author.id, exp=exp + 10)
+                        AttendanceDBUtil.update_attendance_record(
+                            message.author.id,
+                            date=date.today(),
+                            streak=streak + 1,
+                        )
+                    else:
+                        AttendanceDBUtil.create_attendance_record(message.author.id)
                     reaction = "✅"
                     logger.info(
                         f"Attendance recorded for user: {message.author} (ID: {message.author.id})"

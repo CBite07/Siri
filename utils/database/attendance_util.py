@@ -20,6 +20,21 @@ class AttendanceDBUtil:
         finally:
             db_session.close()
 
+    @staticmethod
+    def create_attendance_record(discord_id: int) -> None:
+        with AttendanceDBUtil._get_session() as db_session:
+            new_attendance_record = UserAttendance(
+                discord_id=discord_id,
+                date=date.today(),
+                streak=1
+            )
+            try:
+                db_session.add(new_attendance_record)
+                db_session.commit()
+            except Exception:
+                db_session.rollback()
+                raise
+
     # Checks if an attendance record exists for the given Discord ID and date.
     @staticmethod
     def read_attendanced_date_record(discord_id: int, date: date) -> Optional[date]:

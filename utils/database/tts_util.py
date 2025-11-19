@@ -47,12 +47,10 @@ class TTSDBUtil:
     def update_channel_tts_lang(guild_id: int, channel_id: int, lang: str) -> None:
         with TTSDBUtil._get_session() as db_session:
             try:
-                db_session.query(GuildTTSChannel)\
-                    .filter(
+                db_session.query(GuildTTSChannel).filter(
                     GuildTTSChannel.guild_id == guild_id,
-                    GuildTTSChannel.channel_id == channel_id
-                )\
-                .update({GuildTTSChannel.channel_lang: lang})
+                    GuildTTSChannel.channel_id == channel_id,
+                ).update({GuildTTSChannel.channel_lang: lang})
                 db_session.commit()
             except Exception:
                 db_session.rollback()
