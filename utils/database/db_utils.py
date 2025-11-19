@@ -8,6 +8,7 @@ from .db import SessionLocal
 from .models.user_points import UserPoints
 from .models.user_attendance import UserAttendance
 
+
 # DB util class
 class DBUtils:
     # Provides a SQLAlchemy Session object and automatically closes it upon exit.
@@ -59,7 +60,7 @@ class DBUtils:
     def update_user_exp(discord_id: int, *, exp: int) -> None:
         with DBUtils._get_session() as db_session:
             user_to_update = (
-                db_session.query(UserPoints) 
+                db_session.query(UserPoints)
                 .filter(UserPoints.discord_id == discord_id)
                 .first()
             )
@@ -129,7 +130,6 @@ class DBUtils:
                 .scalar()
             )
             return streak_value
-
 
     # Inserts an attendance record or updates the streak if a record already exists (Upsert).
     @staticmethod
