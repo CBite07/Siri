@@ -13,11 +13,13 @@ class Attendance(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    def _get_attendance_data(self, discord_id: int) -> Optional[Dict[str, Any]]:
-        return AttendanceDBUtil.read_attendance_data(discord_id)
+    def _get_attendance_data(
+        self, guild_id: int, discord_id: int
+    ) -> Optional[Dict[str, Any]]:
+        return AttendanceDBUtil.read_attendance_data(guild_id, discord_id)
 
-    def _is_attendanceable(self, discord_id: int) -> bool:
-        attendance_data = self._get_attendance_data(discord_id)
+    def _is_attendanceable(self, guild_id: int, discord_id: int) -> bool:
+        attendance_data = self._get_attendance_data(guild_id, discord_id)
 
         if attendance_data is None:
             return True
@@ -27,17 +29,20 @@ class Attendance(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.author == self.bot.user:
+        if message.author == self.bot.user and not message.guild:
             return
 
         if message.content.strip() == "ㅊㅊ":
-            if self._is_attendanceable(message.author.id):
-                user_id = message.author.id
+            if self._is_attendanceable(message.guild.id, message.author.id):
+                guild = message.guild
+                user = message.author
 
                 yesterday = date.today() - timedelta(days=1)
 
-                attendance_data = AttendanceDBUtil.read_attendance_data(user_id)
-                level_data = LevelDBUtil.read_level_data(user_id)
+                attendance_data = AttendanceDBUtil.read_attendance_data(
+                    guild.id, user.id
+                )
+                level_data = LevelDBUtil.read_level_data(guild.id, user.id)
 
                 current_exp = level_data.get("exp", 0) if level_data else 0
                 current_streak = (
@@ -58,7 +63,8 @@ class Attendance(commands.Cog):
 
                 try:
                     LevelDBUtil.upsert_level_data(
-                        discord_id=user_id,
+                        guild_id=guild.id,
+                        discord_id=user.id,
                         exp=new_exp,
                         level=level_data.get("level", 1) if level_data else 1,
                         created_at=(
@@ -69,7 +75,8 @@ class Attendance(commands.Cog):
                     )
 
                     AttendanceDBUtil.upsert_attendance_data(
-                        discord_id=user_id,
+                        guild_id=guild.id,
+                        discord_id=user.id,
                         date=date.today(),
                         streak=new_streak,
                         most_streak=new_most_streak,

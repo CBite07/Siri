@@ -35,13 +35,14 @@ class TTSCog(commands.Cog):
             )
 
     def _message_replacement(self, user: discord.Member, text: str) -> str:
+        # replace codeblock
         text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
         text = re.sub(r"`[^`]+`", "", text)
 
         for pattern, repl in replacements:
             text = re.sub(pattern, repl, text)
 
-        if len(text) > 200:
+        if len(text) >= 200:
             text = f"{user.name}님이 말하셨습니다."
         return text.strip()
 

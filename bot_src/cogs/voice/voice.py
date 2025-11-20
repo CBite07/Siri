@@ -21,12 +21,12 @@ class VoiceCog(commands.Cog):
         if voice_client is None:
             await voice_channel.connect()
             return await interaction.response.send_message(
-                f"**<#{voice_channel.id}>**에 입장하였습니다.", ephemeral=True
+                f"**{voice_channel.mention}**에 입장하였습니다.", ephemeral=True
             )
         if voice_client.channel != voice_channel:
             await voice_client.move_to(voice_channel)
             return await interaction.response.send_message(
-                f"🚶 **<#{voice_channel.id}>** 로 이동하였습니다.", ephemeral=True
+                f"**{voice_channel.mention}** 로 이동하였습니다.", ephemeral=True
             )
         await interaction.response.send_message("이미 같은 음성 채널에 있습니다.")
 
@@ -43,17 +43,25 @@ class VoiceCog(commands.Cog):
         voice_client = interaction.guild.voice_client
         if voice_client is None:
             return await interaction.response.send_message(
-                f"**<#{voice_channel.id}>** 사용자가 접속한 음성 채널이 없습니다.",
+                f"**{voice_channel.mention}** 사용자가 접속한 음성 채널이 없습니다.",
                 ephemeral=True,
             )
         if voice_client.channel != voice_channel:
             return await interaction.response.send_message(
-                f"**<#{voice_channel.id}>** 에 접속하십시오.", ephemeral=True
+                f"**{voice_channel.mention}** 에 접속하십시오.", ephemeral=True
             )
         await voice_client.disconnect()
         return await interaction.response.send_message(
-            f"<#{voice_channel.id}>에서 성공적으로 퇴장했습니다.", ephemeral=True
+            f"**{voice_channel.mention}**에서 성공적으로 퇴장했습니다.", ephemeral=True
         )
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, user: discord.Member, before, after):
+        for vc in self.bot.voice_clients:
+            channel = vc.channel
+            members = [m for m in channel.members if not m.bot]
+            if len(members) == 0:
+                await vc.disconnect()
 
 
 async def setup(bot: commands.Bot):

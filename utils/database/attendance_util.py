@@ -21,11 +21,15 @@ class AttendanceDBUtil:
 
     @staticmethod
     def upsert_attendance_data(
-        discord_id: int, date: date, streak: int, most_streak: int
+        guild_id: int, discord_id: int, date: date, streak: int, most_streak: int
     ) -> None:
         with AttendanceDBUtil._get_session() as db_session:
             insert_stmt = insert(UserAttendance).values(
-                discord_id=discord_id, date=date, streak=streak, most_streak=most_streak
+                guild_id=guild_id,
+                discord_id=discord_id,
+                date=date,
+                streak=streak,
+                most_streak=most_streak,
             )
 
             upsert_statmt = insert_stmt.on_duplicate_key_update(
@@ -40,11 +44,16 @@ class AttendanceDBUtil:
                 raise
 
     @staticmethod
-    def read_attendance_data(discord_id: int) -> Optional[dict[str, Any]]:
+    def read_attendance_data(
+        guild_id: int, discord_id: int
+    ) -> Optional[dict[str, Any]]:
         with AttendanceDBUtil._get_session() as db_session:
             user_to_read = (
                 db_session.query(UserAttendance)
-                .filter(UserAttendance.discord_id == discord_id)
+                .filter(
+                    UserAttendance.guild_id == guild_id,
+                    UserAttendance.discord_id == discord_id,
+                )
                 .first()
             )
 
@@ -58,11 +67,14 @@ class AttendanceDBUtil:
             return None
 
     @staticmethod
-    def delete_attendance_date(discord_id: int) -> None:
+    def delete_attendance_date(guild_id: int, discord_id: int) -> None:
         with AttendanceDBUtil._get_session() as db_sesion:
             user_to_delete = (
                 db_sesion.query(UserAttendance)
-                .filter(UserAttendance.discord_id == discord_id)
+                .filter(
+                    UserAttendance.guild_id == guild_id,
+                    UserAttendance.discord_id == discord_id,
+                )
                 .first()
             )
 
