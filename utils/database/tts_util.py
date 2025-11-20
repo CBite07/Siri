@@ -5,6 +5,7 @@ from typing import Generator, Optional, List, Dict, Any
 from .db import SessionLocal
 from .models.guild_tts_channel import GuildTTSChannel
 
+
 class TTSDBUtil:
     @staticmethod
     @contextmanager
@@ -25,10 +26,7 @@ class TTSDBUtil:
             )
             if records:
                 return [
-                    {
-                        "channel_id": r.channel_id, 
-                        "lang": r.channel_lang
-                    } 
+                    {"channel_id": r.channel_id, "channel_lang": r.channel_lang}
                     for r in records
                 ]
             return []
@@ -40,9 +38,7 @@ class TTSDBUtil:
             channel_id=channel_id,
             channel_lang=lang,
         )
-        upsert_stmt = (
-            insert_stmt.on_duplicate_key_update(channel_lang=lang)
-        )
+        upsert_stmt = insert_stmt.on_duplicate_key_update(channel_lang=lang)
         with TTSDBUtil._get_session() as db_session:
             try:
                 db_session.execute(upsert_stmt)
