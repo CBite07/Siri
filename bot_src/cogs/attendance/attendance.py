@@ -4,9 +4,11 @@ from discord.ext import commands
 
 from datetime import date, timedelta
 from typing import Optional, Dict, Any
+from random import randint
 
 from utils.log import logger
 from utils.database import LevelDBUtil, AttendanceDBUtil
+from utils.level import LevelUtil
 
 
 class Attendance(commands.Cog):
@@ -55,7 +57,8 @@ class Attendance(commands.Cog):
                     attendance_data.get("date", 0) if attendance_data else 0
                 )
 
-                new_exp = current_exp + 10
+                new_exp = current_exp + randint(700, 1000)
+                new_level = LevelUtil.exp_to_level(new_exp)
                 new_streak = (
                     current_streak + 1 if current_attendance_date == yesterday else 1
                 )
@@ -66,7 +69,7 @@ class Attendance(commands.Cog):
                         guild_id=guild.id,
                         discord_id=user.id,
                         exp=new_exp,
-                        level=level_data.get("level", 1) if level_data else 1,
+                        level=new_level,
                         created_at=(
                             level_data.get("created_at", date.today())
                             if level_data
@@ -93,6 +96,7 @@ class Attendance(commands.Cog):
                     )
                 await message.add_reaction(reaction)
             else:
+                print('x')
                 await message.add_reaction("❌")
 
 

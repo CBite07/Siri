@@ -15,6 +15,7 @@ class PathConfig:
         "bot_src.cogs.attendance.attendance",
         "bot_src.cogs.voice.voice",
         "bot_src.cogs.voice.tts",
+        "bot_src.cogs.information.information"
     ]
 
     DATA_DIR = ROOT_DIR / "data"

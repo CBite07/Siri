@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, Date, Integer
+from sqlalchemy import Column, BigInteger, Date, Integer, UniqueConstraint
 
 from ..db import Base
 
@@ -12,3 +12,7 @@ class UserAttendance(Base):
     date = Column(Date, nullable=False)
     streak = Column(Integer, default=0)
     most_streak = Column(Integer, default=0)
+
+    __table_args__ = (
+        UniqueConstraint("guild_id", "discord_id", name="uq_guild_discord"),
+    )
