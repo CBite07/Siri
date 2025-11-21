@@ -39,6 +39,9 @@ class TTSCog(commands.Cog):
         text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
         text = re.sub(r"`[^`]+`", "", text)
 
+        # replace links
+        text = re.sub(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://\S+", "", text)
+
         for pattern, repl in replacements:
             text = re.sub(pattern, repl, text)
 
@@ -47,48 +50,13 @@ class TTSCog(commands.Cog):
         return text.strip()
 
     @app_commands.command(
-        name="tts_채널_지정", description="TTS에 사용될 채널을 지정합니다."
-    )
-    @app_commands.describe(channel="선택할 채널을 지정하십시오.")
-    @app_commands.default_permissions(administrator=True)
-    async def add_tts_channel(
-        self, interaction: discord.Interaction, channel: discord.TextChannel
-    ):
-        guild_id = interaction.guild.id
-        channel_id = channel.id
-
-        TTSDBUtil.upsert_tts_channel(guild_id, channel_id, lang="ko")
-
-        await interaction.response.send_message(
-            f"{channel.mention} 채널이 TTS용으로 지정되었습니다. (기본 언어: 한국어)",
-            ephemeral=True,
-        )
-
-    @app_commands.command(
-        name="tts_채널_해제", description="TTS 채널 지정을 해제합니다."
-    )
-    @app_commands.describe(channel="해제할 채널을 지정하십시오.")
-    @app_commands.default_permissions(administrator=True)
-    async def remove_tts_channel(
-        self, interaction: discord.Interaction, channel: discord.TextChannel
-    ):
-        guild_id = interaction.guild.id
-        channel_id = channel.id
-
-        TTSDBUtil.delete_guild_tts_channel(guild_id, channel_id)
-
-        await interaction.response.send_message(
-            f"{channel.mention} 채널의 TTS 지정이 해제되었습니다.", ephemeral=True
-        )
-
-    @app_commands.command(
         name="tts_언어_변경", description="TTS 채널의 언어를 바꿉니다."
     )
     @app_commands.describe(
-        channel="선택할 채널을 지정하십시오", language="선택할 언어를 지정하십시오."
+        channel="선택할 채널을 지정하십시오", channel_lang="선택할 언어를 지정하십시오."
     )
     @app_commands.choices(
-        language=[
+        channel_lang=[
             app_commands.Choice(name="한국어", value="ko"),
             app_commands.Choice(name="영어", value="en"),
             app_commands.Choice(name="일본어", value="ja"),
@@ -98,8 +66,8 @@ class TTSCog(commands.Cog):
     async def tts_language_change(
         self,
         interaction: discord.Interaction,
-        channel: discord.TextChannel,
-        language: str,
+        channel: discord.VoiceChannel,
+        channel_lang: str,
     ):
         guild = interaction.guild
         db_records = TTSDBUtil.read_tts_data(guild.id)
@@ -107,22 +75,16 @@ class TTSCog(commands.Cog):
         target_record = next(
             (r for r in db_records if r["channel_id"] == channel.id), None
         )
-
-        if not target_record:
-            return await interaction.response.send_message(
-                f"{channel.mention}은 TTS 채널이 아닙니다.", ephemeral=True
-            )
-
-        target_record["channel_lang"] = language
+        target_record["channel_lang"] = channel_lang
 
         TTSDBUtil.upsert_tts_channel(
             guild_id=guild.id,
             channel_id=target_record["channel_id"],
-            lang=target_record["channel_lang"],
+            channel_lang=target_record["channel_lang"],
         )
 
         await interaction.response.send_message(
-            f"{channel.mention}의 TTS 언어를 `{language}`로 바꾸었습니다.",
+            f"{channel.mention}의 TTS 언어를 `{channel_lang}`로 바꾸었습니다.",
             ephemeral=True,
         )
 
@@ -137,7 +99,6 @@ class TTSCog(commands.Cog):
 
         guild = message.guild
         channel = message.channel
-
         db_records: List[Dict[str, Any]] = TTSDBUtil.read_tts_data(guild.id)
 
         tts_channel_data = next(
@@ -146,32 +107,39 @@ class TTSCog(commands.Cog):
         )
 
         if tts_channel_data:
-            tts_lang = tts_channel_data.get("channel_lang", "ko")
-            tts_message = self._message_replacement(message.author, message.content)
+            pass
+        else:
+            TTSDBUtil.upsert_tts_channel(
+                guild_id=guild.id, channel_id=channel.id, channel_lang="ko"
+            )
+            tts_channel_data = {"channel_id": channel.id, "channel_lang": "ko"}
 
-            if tts_lang not in lang.tts_langs():
-                await message.channel.send(f"{tts_lang}을 지원하지 않습니다.")
-                tts_lang = "ko"
-            tts = gTTS(text=tts_message, lang=tts_lang)
-            fp = io.BytesIO()
-            tts.write_to_fp(fp)
-            fp.seek(0)
+        tts_lang = tts_channel_data.get("channel_lang", "ko")
+        tts_message = self._message_replacement(message.author, message.content)
 
-            if guild.id not in self.queue:
-                self.queue[guild.id] = []
+        if tts_lang not in lang.tts_langs():
+            await message.channel.send(f"{tts_lang}을 지원하지 않습니다.")
+            tts_lang = "ko"
 
-            voice_client = guild.voice_client
+        tts = gTTS(text=tts_message, lang=tts_lang)
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        fp.seek(0)
 
-            if not voice_client:
-                return
+        if guild.id not in self.queue:
+            self.queue[guild.id] = []
 
-            if voice_client.is_playing() or self.queue[guild.id]:
-                self.queue[guild.id].append(fp)
-            else:
-                voice_client.play(
-                    discord.FFmpegPCMAudio(fp, pipe=True),
-                    after=lambda e: self._play_next_in_queue(guild.id, e),
-                )
+        voice_client = guild.voice_client
+        if not voice_client:
+            return
+
+        if voice_client.is_playing() or self.queue[guild.id]:
+            self.queue[guild.id].append(fp)
+        else:
+            voice_client.play(
+                discord.FFmpegPCMAudio(fp, pipe=True),
+                after=lambda e: self._play_next_in_queue(guild.id, e),
+            )
 
 
 async def setup(bot: commands.Bot):

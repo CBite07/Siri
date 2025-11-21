@@ -32,13 +32,13 @@ class TTSDBUtil:
             return []
 
     @staticmethod
-    def upsert_tts_channel(guild_id: int, channel_id: int, lang: str) -> None:
+    def upsert_tts_channel(guild_id: int, channel_id: int, channel_lang: str) -> None:
         insert_stmt = insert(GuildTTSChannel).values(
             guild_id=guild_id,
             channel_id=channel_id,
-            channel_lang=lang,
+            channel_lang=channel_lang,
         )
-        upsert_stmt = insert_stmt.on_duplicate_key_update(channel_lang=lang)
+        upsert_stmt = insert_stmt.on_duplicate_key_update(channel_lang=channel_lang)
         with TTSDBUtil._get_session() as db_session:
             try:
                 db_session.execute(upsert_stmt)

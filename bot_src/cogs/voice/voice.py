@@ -12,17 +12,21 @@ class VoiceCog(commands.Cog):
     )
     async def join_voice(self, interaction: discord.Interaction):
         author = interaction.user
+
         if not author.voice or not author.voice.channel:
             return await interaction.response.send_message(
                 "먼저 음성 채널에 입장하십시오", ephemeral=True
             )
+
         voice_channel = author.voice.channel
         voice_client = interaction.guild.voice_client
+
         if voice_client is None:
             await voice_channel.connect()
             return await interaction.response.send_message(
                 f"**{voice_channel.mention}**에 입장하였습니다.", ephemeral=True
             )
+
         if voice_client.channel != voice_channel:
             await voice_client.move_to(voice_channel)
             return await interaction.response.send_message(
