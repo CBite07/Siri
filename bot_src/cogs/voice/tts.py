@@ -9,6 +9,8 @@ from gtts import gTTS, lang
 
 from utils.database import TTSDBUtil
 from utils.configs.tts import replacements
+from utils.UI.embeds import StatusEmbed
+from utils.log import logger
 
 
 class TTSCog(commands.Cog):
@@ -64,30 +66,43 @@ class TTSCog(commands.Cog):
             app_commands.Choice(name="중국어", value="zh"),
         ]
     )
+    @app_commands.guild_only()
     async def tts_language_change(
         self,
         interaction: discord.Interaction,
         channel: discord.VoiceChannel,
         channel_lang: str,
     ):
-        guild = interaction.guild
-        db_records = TTSDBUtil.read_tts_data(guild.id)
+        try:
+            guild = interaction.guild
+            db_records = TTSDBUtil.read_tts_data(guild.id)
 
-        target_record = next(
-            (r for r in db_records if r["channel_id"] == channel.id), None
-        )
-        target_record["channel_lang"] = channel_lang
+            if not db_records:
+                return
 
-        TTSDBUtil.upsert_tts_channel(
-            guild_id=guild.id,
-            channel_id=target_record["channel_id"],
-            channel_lang=target_record["channel_lang"],
-        )
+            target_record = next(
+                (r for r in db_records if r["channel_id"] == channel.id), None
+            )
 
-        await interaction.response.send_message(
-            f"{channel.mention}의 TTS 언어를 `{channel_lang}`로 바꾸었습니다.",
-            ephemeral=True,
-        )
+            if target_record is None:
+                target_record = {"channel_id": channel.id, "channel_lang": channel_lang}
+            else:
+                target_record["channel_lang"] = channel_lang
+
+            TTSDBUtil.upsert_tts_channel(
+                guild_id=guild.id,
+                channel_id=target_record["channel_id"],
+                channel_lang=target_record["channel_lang"],
+            )
+
+            await interaction.response.send_message(
+                f"{channel.mention}의 TTS 언어를 `{channel_lang}`로 바꾸었습니다.",
+                ephemeral=True,
+            )
+        except Exception as e:
+            logger.error(e)
+            embed = StatusEmbed.create_error()
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -98,49 +113,55 @@ class TTSCog(commands.Cog):
         ):
             return
 
-        guild = message.guild
-        channel = message.channel
-        db_records: List[Dict[str, Any]] = TTSDBUtil.read_tts_data(guild.id)
+        try:
+            guild = message.guild
+            channel = message.channel
+            db_records: List[Dict[str, Any]] = TTSDBUtil.read_tts_data(guild.id)
 
-        tts_channel_data = next(
-            (record for record in db_records if record["channel_id"] == channel.id),
-            None,
-        )
+            if not isinstance(channel, discord.VoiceChannel):
+                return
 
-        if tts_channel_data:
-            pass
-        else:
-            TTSDBUtil.upsert_tts_channel(
-                guild_id=guild.id, channel_id=channel.id, channel_lang="ko"
+            tts_channel_data = next(
+                (record for record in db_records if record["channel_id"] == channel.id),
+                None,
             )
-            tts_channel_data = {"channel_id": channel.id, "channel_lang": "ko"}
 
-        tts_lang = tts_channel_data.get("channel_lang", "ko")
-        tts_message = self._message_replacement(message.author, message.content)
+            if tts_channel_data:
+                pass
+            else:
+                TTSDBUtil.upsert_tts_channel(
+                    guild_id=guild.id, channel_id=channel.id, channel_lang="ko"
+                )
+                tts_channel_data = {"channel_id": channel.id, "channel_lang": "ko"}
 
-        if tts_lang not in lang.tts_langs():
-            await message.channel.send(f"{tts_lang}을 지원하지 않습니다.")
-            tts_lang = "ko"
+            tts_lang = tts_channel_data.get("channel_lang", "ko")
+            tts_message = self._message_replacement(message.author, message.content)
 
-        tts = gTTS(text=tts_message, lang=tts_lang)
-        fp = io.BytesIO()
-        tts.write_to_fp(fp)
-        fp.seek(0)
+            if tts_lang not in lang.tts_langs():
+                await message.channel.send(f"{tts_lang}을 지원하지 않습니다.")
+                tts_lang = "ko"
 
-        if guild.id not in self.queue:
-            self.queue[guild.id] = []
+            tts = gTTS(text=tts_message, lang=tts_lang)
+            fp = io.BytesIO()
+            tts.write_to_fp(fp)
+            fp.seek(0)
 
-        voice_client = guild.voice_client
-        if not voice_client:
-            return
+            if guild.id not in self.queue:
+                self.queue[guild.id] = []
 
-        if voice_client.is_playing() or self.queue[guild.id]:
-            self.queue[guild.id].append(fp)
-        else:
-            voice_client.play(
-                discord.FFmpegPCMAudio(fp, pipe=True),
-                after=lambda e: self._play_next_in_queue(guild.id, e),
-            )
+            voice_client = guild.voice_client
+            if not voice_client:
+                return
+
+            if voice_client.is_playing() or self.queue[guild.id]:
+                self.queue[guild.id].append(fp)
+            else:
+                voice_client.play(
+                    discord.FFmpegPCMAudio(fp, pipe=True),
+                    after=lambda e: self._play_next_in_queue(guild.id, e),
+                )
+        except Exception as e:
+            logger.error(e)
 
 
 async def setup(bot: commands.Bot):

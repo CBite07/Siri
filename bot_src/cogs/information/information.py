@@ -2,8 +2,9 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from utils.embeds import LevelEmbed
+from utils.UI.embeds import LevelEmbed, StatusEmbed
 from utils.database import LevelDBUtil
+from utils.log import logger
 
 
 class InfoCog(commands.Cog):
@@ -12,6 +13,7 @@ class InfoCog(commands.Cog):
 
     @app_commands.command(name="유저_정보", description="유저의 정보를 확인합니다.")
     @app_commands.describe(user="정보룰 조회할 유저를 지정하시오")
+    @app_commands.guild_only()
     async def show_user_info(
         self, interaction: discord.Interaction, user: discord.Member
     ):
@@ -22,15 +24,14 @@ class InfoCog(commands.Cog):
             if level_data:
                 current_exp = level_data.get("exp", 0)
                 current_level = level_data.get("level", 0)
-                embed = LevelEmbed.return_user_info_embed(
-                    user, current_exp, current_level
-                )
+                embed = LevelEmbed.create_user_info(user, current_exp, current_level)
             else:
-                embed = LevelEmbed.return_no_user_info_embed(user)
-
+                embed = LevelEmbed.create_not_found_error(user)
             return await interaction.response.send_message(embed=embed)
         except Exception as e:
-            print(e)
+            logger.error(e)
+            embed = StatusEmbed.create_error()
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 async def setup(bot: commands.Bot):

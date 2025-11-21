@@ -96,7 +96,6 @@ class Attendance(commands.Cog):
                     )
                 await message.add_reaction(reaction)
             else:
-                print("x")
                 await message.add_reaction("❌")
 
 

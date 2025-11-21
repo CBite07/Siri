@@ -1,7 +1,7 @@
 from typing import Optional, Any
 from datetime import date
 
-from sqlalchemy import delete
+from sqlalchemy import select, delete
 from sqlalchemy.dialects.mysql import insert
 
 from .db_main import get_db_session
@@ -27,7 +27,6 @@ class AttendanceDBUtil:
             )
 
             upsert_stmt = insert_stmt.on_duplicate_key_update(
-                discord_id=discord_id,
                 date=attendance_date,
                 streak=streak,
                 most_streak=most_streak,
@@ -40,30 +39,28 @@ class AttendanceDBUtil:
         guild_id: int, discord_id: int
     ) -> Optional[dict[str, Any]]:
         with get_db_session() as db_session:
-            user_to_read = (
-                db_session.query(UserAttendance)
-                .filter(
-                    UserAttendance.guild_id == guild_id,
-                    UserAttendance.discord_id == discord_id,
-                )
-                .first()
+            stmt = select(UserAttendance).where(
+                UserAttendance.guild_id == guild_id,
+                UserAttendance.discord_id == discord_id,
             )
 
-            if user_to_read:
+            user = db_session.scalars(stmt).first()
+
+            if user:
                 return {
-                    "discord_id": user_to_read.discord_id,
-                    "date": user_to_read.date,
-                    "streak": user_to_read.streak,
-                    "most_streak": user_to_read.most_streak,
+                    "discord_id": user.discord_id,
+                    "date": user.date,
+                    "streak": user.streak,
+                    "most_streak": user.most_streak,
                 }
             return None
 
     @staticmethod
     def delete_attendance_date(guild_id: int, discord_id: int) -> None:
         with get_db_session() as db_session:
-            delete_stmt = delete(UserAttendance).where(
+            stmt = delete(UserAttendance).where(
                 UserAttendance.guild_id == guild_id,
                 UserAttendance.discord_id == discord_id,
             )
 
-            db_session.execute(delete_stmt)
+            db_session.execute(stmt)

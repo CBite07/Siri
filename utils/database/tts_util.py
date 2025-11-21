@@ -1,67 +1,48 @@
-from sqlalchemy.orm import Session
+from typing import Generator, List, Dict, Any
+
 from sqlalchemy.dialects.mysql import insert
-from contextlib import contextmanager
-from typing import Generator, Optional, List, Dict, Any
-from .db_main import SessionLocal
+from sqlalchemy import select, delete
+
+from .db_main import get_db_session
 from .models.guild_tts_channel import GuildTTSChannel
 
 
 class TTSDBUtil:
     @staticmethod
-    @contextmanager
-    def _get_session() -> Generator[Session, None, None]:
-        db_session = SessionLocal()
-        try:
-            yield db_session
-        finally:
-            db_session.close()
+    def upsert_tts_channel(guild_id: int, channel_id: int, channel_lang: str) -> None:
+        with get_db_session() as db_session:
+            insert_stmt = insert(GuildTTSChannel).values(
+                guild_id=guild_id,
+                channel_id=channel_id,
+                channel_lang=channel_lang,
+            )
+
+            upsert_stmt = insert_stmt.on_duplicate_key_update(channel_lang=channel_lang)
+
+            db_session.execute(upsert_stmt)
 
     @staticmethod
     def read_tts_data(guild_id: int) -> List[Dict[str, Any]]:
-        with TTSDBUtil._get_session() as db_session:
-            records = (
-                db_session.query(GuildTTSChannel)
-                .filter(GuildTTSChannel.guild_id == guild_id)
-                .all()
-            )
-            if records:
+        with get_db_session() as db_session:
+            stmt = select(GuildTTSChannel).where(GuildTTSChannel.guild_id == guild_id)
+
+            channels = db_session.scalars(stmt).all()
+
+            if channels:
                 return [
-                    {"channel_id": r.channel_id, "channel_lang": r.channel_lang}
-                    for r in records
+                    {
+                        "channel_id": channel.channel_id,
+                        "channel_lang": channel.channel_lang,
+                    }
+                    for channel in channels
                 ]
             return []
 
     @staticmethod
-    def upsert_tts_channel(guild_id: int, channel_id: int, channel_lang: str) -> None:
-        insert_stmt = insert(GuildTTSChannel).values(
-            guild_id=guild_id,
-            channel_id=channel_id,
-            channel_lang=channel_lang,
-        )
-        upsert_stmt = insert_stmt.on_duplicate_key_update(channel_lang=channel_lang)
-        with TTSDBUtil._get_session() as db_session:
-            try:
-                db_session.execute(upsert_stmt)
-                db_session.commit()
-            except Exception:
-                db_session.rollback()
-                raise
-
-    @staticmethod
     def delete_guild_tts_channel(guild_id: int, channel_id: int) -> None:
-        with TTSDBUtil._get_session() as db_session:
-            channel_to_delete = (
-                db_session.query(GuildTTSChannel)
-                .filter(
-                    GuildTTSChannel.guild_id == guild_id,
-                    GuildTTSChannel.channel_id == channel_id,
-                )
-                .first()
+        with get_db_session() as db_session:
+            stmt = db_session.delete(GuildTTSChannel).where(
+                GuildTTSChannel.guild_id == guild_id,
+                GuildTTSChannel.channel_id == channel_id,
             )
-            if channel_to_delete:
-                try:
-                    db_session.delete(channel_to_delete)
-                    db_session.commit()
-                except Exception:
-                    db_session.rollback()
-                    raise
+            db_session.execute(stmt)
