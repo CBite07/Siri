@@ -1,6 +1,6 @@
 from sqlalchemy import Column, BigInteger, Date, Integer, UniqueConstraint
 
-from ..db import Base
+from ..db_main import Base
 
 
 class UserAttendance(Base):

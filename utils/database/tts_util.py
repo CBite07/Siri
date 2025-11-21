@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.dialects.mysql import insert
 from contextlib import contextmanager
 from typing import Generator, Optional, List, Dict, Any
-from .db import SessionLocal
+from .db_main import SessionLocal
 from .models.guild_tts_channel import GuildTTSChannel
 
 

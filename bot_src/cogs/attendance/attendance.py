@@ -80,7 +80,7 @@ class Attendance(commands.Cog):
                     AttendanceDBUtil.upsert_attendance_data(
                         guild_id=guild.id,
                         discord_id=user.id,
-                        date=date.today(),
+                        attendance_date=date.today(),
                         streak=new_streak,
                         most_streak=new_most_streak,
                     )
@@ -96,7 +96,7 @@ class Attendance(commands.Cog):
                     )
                 await message.add_reaction(reaction)
             else:
-                print('x')
+                print("x")
                 await message.add_reaction("❌")
 
 

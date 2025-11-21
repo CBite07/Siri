@@ -1,5 +1,5 @@
 from sqlalchemy import Column, BigInteger, String, UniqueConstraint
-from ..db import Base
+from ..db_main import Base
 
 
 class GuildTTSChannel(Base):

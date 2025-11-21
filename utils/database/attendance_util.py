@@ -1,53 +1,45 @@
-from contextlib import contextmanager
-from typing import Generator, Optional, Any
+from typing import Optional, Any
 from datetime import date
 
-from sqlalchemy.orm import Session
+from sqlalchemy import delete
 from sqlalchemy.dialects.mysql import insert
 
-from .db import SessionLocal
+from .db_main import get_db_session
 from .models.user_attendance import UserAttendance
 
 
 class AttendanceDBUtil:
     @staticmethod
-    @contextmanager
-    def _get_session() -> Generator[Session, None, None]:
-        db_session = SessionLocal()
-        try:
-            yield db_session
-        finally:
-            db_session.close()
-
-    @staticmethod
     def upsert_attendance_data(
-        guild_id: int, discord_id: int, date: date, streak: int, most_streak: int
+        guild_id: int,
+        discord_id: int,
+        attendance_date: date,
+        streak: int,
+        most_streak: int,
     ) -> None:
-        with AttendanceDBUtil._get_session() as db_session:
+        with get_db_session() as db_session:
             insert_stmt = insert(UserAttendance).values(
                 guild_id=guild_id,
                 discord_id=discord_id,
-                date=date,
+                date=attendance_date,
                 streak=streak,
                 most_streak=most_streak,
             )
 
-            upsert_statmt = insert_stmt.on_duplicate_key_update(
-                discord_id=discord_id, date=date, streak=streak, most_streak=most_streak
+            upsert_stmt = insert_stmt.on_duplicate_key_update(
+                discord_id=discord_id,
+                date=attendance_date,
+                streak=streak,
+                most_streak=most_streak,
             )
 
-            try:
-                db_session.execute(upsert_statmt)
-                db_session.commit()
-            except Exception:
-                db_session.rollback()
-                raise
+            db_session.execute(upsert_stmt)
 
     @staticmethod
     def read_attendance_data(
         guild_id: int, discord_id: int
     ) -> Optional[dict[str, Any]]:
-        with AttendanceDBUtil._get_session() as db_session:
+        with get_db_session() as db_session:
             user_to_read = (
                 db_session.query(UserAttendance)
                 .filter(
@@ -68,20 +60,10 @@ class AttendanceDBUtil:
 
     @staticmethod
     def delete_attendance_date(guild_id: int, discord_id: int) -> None:
-        with AttendanceDBUtil._get_session() as db_sesion:
-            user_to_delete = (
-                db_sesion.query(UserAttendance)
-                .filter(
-                    UserAttendance.guild_id == guild_id,
-                    UserAttendance.discord_id == discord_id,
-                )
-                .first()
+        with get_db_session() as db_session:
+            delete_stmt = delete(UserAttendance).where(
+                UserAttendance.guild_id == guild_id,
+                UserAttendance.discord_id == discord_id,
             )
 
-            if user_to_delete:
-                try:
-                    db_sesion.delete(user_to_delete)
-                    db_sesion.commit()
-                except Exception:
-                    db_sesion.rollback()
-                    raise
+            db_session.execute(delete_stmt)

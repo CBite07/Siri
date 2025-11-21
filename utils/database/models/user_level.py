@@ -1,6 +1,6 @@
 from sqlalchemy import Column, BigInteger, Integer, Date, UniqueConstraint
 
-from ..db import Base
+from ..db_main import Base
 
 
 class UserLevel(Base):

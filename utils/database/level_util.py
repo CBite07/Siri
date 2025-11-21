@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.mysql import insert
 
-from .db import SessionLocal
+from .db_main import SessionLocal
 from .models.user_level import UserLevel
 
 
