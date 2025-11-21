@@ -41,6 +41,7 @@ class TTSCog(commands.Cog):
 
         # replace links
         text = re.sub(r"\b[a-zA-Z][a-zA-Z0-9+.-]*://\S+", "", text)
+        text = re.sub(r"(\b[a-zA-Z][a-zA-Z0-9+.-]*://\S+|www\.\S+)", "", text)
 
         for pattern, repl in replacements:
             text = re.sub(pattern, repl, text)
