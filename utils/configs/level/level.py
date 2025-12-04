@@ -1,3 +1,3 @@
 class LevelConfig:
-    CURVE_COEFFICIENT = 0.01826
+    CURVE_COEFFICIENT = 0.0004
     EXP_SCALE = 10000

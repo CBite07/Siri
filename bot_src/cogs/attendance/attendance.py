@@ -57,7 +57,7 @@ class Attendance(commands.Cog):
                     attendance_data.get("date", 0) if attendance_data else 0
                 )
 
-                new_exp = current_exp + randint(700, 1000)
+                new_exp = current_exp + randint(20, 30)
                 new_level = LevelUtil.exp_to_level(new_exp)
                 new_streak = (
                     current_streak + 1 if current_attendance_date == yesterday else 1
@@ -86,13 +86,10 @@ class Attendance(commands.Cog):
                     )
 
                     reaction = "✅"
-                    logger.info(
-                        f"Attendance recorded for user: {message.author} (ID: {message.author.id}). New Streak: {new_streak}"
-                    )
                 except Exception as e:
                     reaction = "❌"
                     logger.error(
-                        f"Failed to record attendance for user: {message.author} (ID: {message.author.id}). Error: {e}"
+                        f"Failed to record attendance for user: {e}"
                     )
                 await message.add_reaction(reaction)
             else:

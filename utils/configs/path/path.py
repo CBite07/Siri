@@ -1,7 +1,6 @@
 from pathlib import Path
 
 
-# Path configuration class
 class PathConfig:
     ROOT_DIR = Path(__file__).parent.parent.parent.parent
 
@@ -15,7 +14,8 @@ class PathConfig:
         "bot_src.cogs.attendance.attendance",
         "bot_src.cogs.voice.voice",
         "bot_src.cogs.voice.tts",
-        "bot_src.cogs.information.information",
+        "bot_src.cogs.information.level_information",
+        "bot_src.cogs.information.bot_information",
     ]
 
     DATA_DIR = ROOT_DIR / "data"
