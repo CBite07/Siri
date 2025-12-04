@@ -2,6 +2,9 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+import psutil
+import os
+
 from utils.UI.embeds import StatusEmbed
 from utils.log import logger
 
@@ -12,7 +15,11 @@ class BotInfoCog(commands.Cog):
     @app_commands.command(name="봇_상태", description="봇의 상태를 확인합니다.")
     async def show_bot_status(self, interaction: discord.Interaction):
         try:
-            embed = StatusEmbed.create_bot_status(self.bot)
+            embed = StatusEmbed.create_bot_status(
+                self.bot.latency,
+                int(psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024)),
+                len(self.bot.guilds)
+            )
             return await interaction.response.send_message(embed=embed)
         except Exception as e:
             logger.error(e)

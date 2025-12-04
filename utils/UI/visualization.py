@@ -9,5 +9,3 @@ class VisualUtil:
         bar += '░' * remaining_length
         
         return bar[:length]
-
-print(VisualUtil.create_progress_bar(20, 10))

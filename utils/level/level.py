@@ -24,10 +24,10 @@ class LevelUtil:
     @staticmethod
     def percent_of_remaining_exp(current_exp):
         current_level = LevelUtil.exp_to_level(current_exp)
-        current_level_start_exp = LevelUtil.level_to_exp(current_level)
+        current_level_total_exp = LevelUtil.level_to_exp(current_level)
         next_level_total_exp = LevelUtil.level_to_exp(current_level + 1)
-        exp_needed_for_current_level = next_level_total_exp - current_level_start_exp
-        exp_earned_in_current_level = current_exp - current_level_start_exp
+        exp_needed_for_current_level = next_level_total_exp - current_level_total_exp
+        exp_earned_in_current_level = current_exp - current_level_total_exp
         
         if exp_needed_for_current_level <= 0:
             return 100.0
